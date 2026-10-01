@@ -1,0 +1,36 @@
+name: Check fuel prices
+
+on:
+  schedule:
+    # Times are UTC (PH = UTC+8). PH price changes are usually announced Sun–Mon for Tuesday.
+    - cron: '0 */3 * * 0,1,2' # every 3 hours, Sunday–Tuesday
+    - cron: '0 1 * * 3,4,5,6' # 9:00 AM PH, Wednesday–Saturday
+  workflow_dispatch: # "Run workflow" button for manual runs
+    inputs:
+      dry_run:
+        description: 'Dry run (no database writes, no pushes)'
+        type: boolean
+        default: false
+
+concurrency:
+  group: fuel-scraper
+  cancel-in-progress: false
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - name: Scrape, save and notify
+        run: node src/index.js ${{ inputs.dry_run && '--dry-run' || '' }}
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}

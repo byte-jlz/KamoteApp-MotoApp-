@@ -59,6 +59,16 @@ test('real headline: mixed with "while"', () => {
   });
 });
 
+test('real headline: price levels are not adjustments', () => {
+  assert.deepEqual(pick('Diesel seen surging to P162/liter as worst-case oil shock threatens PH inflation spike'), {});
+  assert.deepEqual(pick('Gasoline now at P58 per liter in Metro Manila'), {});
+  // Under the ₱20 sanity cap, so only the "to/at" rule stops these
+  assert.deepEqual(pick('Diesel price hike to reach P15 per liter by December'), {});
+  assert.deepEqual(pick('Kerosene up, hitting P9.50 in some areas'), {});
+  // ...but "up P1 to P1.30" is still a range
+  assert.deepEqual(pick('Diesel up P1 to P1.30 per liter next week'), { diesel: ['up', 1, 1.3] });
+});
+
 test('relevance filter', () => {
   assert.equal(isRelevant('Oil firms announce gasoline price hike'), true);
   assert.equal(isRelevant('Brent crude rises to $85 per barrel'), false);

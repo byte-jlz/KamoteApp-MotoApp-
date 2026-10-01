@@ -3,7 +3,7 @@
 Checks Philippine news for pump price adjustments (gasoline, diesel, kerosene), saves them to Supabase,
 and sends a push notification to MotoMonitor users through Firebase Cloud Messaging.
 
-Runs on GitHub Actions: every 3 hours Sunday–Tuesday (when PH price changes are announced) and once a day otherwise.
+Runs on GitHub Actions (Node 22): every 3 hours Sunday–Tuesday (when PH price changes are announced) and once a day otherwise.
 
 ## How it works
 

@@ -15,7 +15,8 @@ const DOWN =
 const NONE = /\b(no (?:price )?(?:change|movement|adjustment)|unchanged|steady)\b/i;
 
 const PESO = String.raw`(?:₱|PHP|Php|P)\s?`;
-const NUM = String.raw`(\d{1,2}(?:\.\d{1,2})?)`;
+// (?![\d.]) stops "P162" from being read as "P16" — whole numbers only.
+const NUM = String.raw`(\d{1,2}(?:\.\d{1,2})?)(?![\d.])`;
 // "P1.20", "₱1 to P1.30", "P0.90-P1.10", "P1 – 1.30"
 const AMOUNT = new RegExp(`${PESO}${NUM}(?:\\s?(?:to|-|–|—)\\s?(?:${PESO})?${NUM})?`, 'g');
 // "50 centavos", "40 to 60 centavos"
@@ -23,6 +24,8 @@ const CENTAVOS = new RegExp(String.raw`(\d{1,2})(?:\s?(?:to|-|–|—)\s?(\d{1,2
 
 // LPG / cooking gas is priced per kilo and changes monthly — not a pump price.
 const LPG = /\b(lpg|cooking gas|auto-?lpg)\b|\/\s?kg\b|per kilo/i;
+// "surging to P62/liter", "now at P58" — a price level, not an adjustment.
+const LEVEL_BEFORE = /\b(?:to|at|reach(?:es|ing)?|hits?|hitting|around|about|nasa)\s*$/i;
 // "P3/kg", "P2 per kilo" — amounts that aren't per liter.
 const PER_KILO = /^\s?(?:\/\s?kg|per\s?(?:kg|kilo))/i;
 
@@ -42,6 +45,7 @@ function directionIn(text) {
 function amountIn(text) {
   for (const m of text.matchAll(AMOUNT)) {
     if (PER_KILO.test(text.slice(m.index + m[0].length))) continue;
+    if (!m[2] && LEVEL_BEFORE.test(text.slice(0, m.index))) continue;
     const a = Number(m[1]);
     const b = m[2] ? Number(m[2]) : a;
     if (a > 0 && a < 20 && b > 0 && b < 20) return { min: Math.min(a, b), max: Math.max(a, b) };

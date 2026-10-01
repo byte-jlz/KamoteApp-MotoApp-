@@ -95,7 +95,7 @@ export default function BikeForm() {
           <Text style={[styles.hint, { marginTop: 8 }]}>
             {existing
               ? 'Changing the type does not change your existing maintenance items.'
-              : 'We set up a recommended PMS schedule for this type. You can edit any interval later.'}
+              : 'Next, choose what to track. We’ll suggest the important ones for this type.'}
           </Text>
         </Card>
 

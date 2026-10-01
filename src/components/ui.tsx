@@ -15,7 +15,7 @@ import {
 } from 'react-native';
 import { fmtDate } from '../lib/format';
 import { Status } from '../lib/status';
-import { colors } from '../lib/theme';
+import { colors, themedStyles, themeName } from '../lib/theme';
 
 export function Screen({ children }: { children: ReactNode }) {
   return (
@@ -73,7 +73,12 @@ export function Field({ label, hint, ...props }: TextInputProps & { label: strin
   return (
     <View style={styles.field}>
       <Text style={styles.label}>{label}</Text>
-      <TextInput placeholderTextColor={colors.placeholder} {...props} style={[styles.input, props.style]} />
+      <TextInput
+        placeholderTextColor={colors.placeholder}
+        keyboardAppearance={themeName()}
+        {...props}
+        style={[styles.input, props.style]}
+      />
       {hint ? <Text style={styles.hint}>{hint}</Text> : null}
     </View>
   );
@@ -112,6 +117,7 @@ export function DateField({
           value={value}
           mode="date"
           display="compact"
+          themeVariant={themeName()}
           maximumDate={max}
           onChange={(_, d) => d && onChange(d)}
         />
@@ -139,19 +145,21 @@ export function DateField({
   );
 }
 
-const STATUS_META: Record<Status, { label: string; fg: string; bg: string }> = {
-  overdue: { label: 'Overdue', fg: colors.danger, bg: colors.dangerBg },
-  soon: { label: 'Due soon', fg: colors.warn, bg: colors.warnBg },
-  ok: { label: 'OK', fg: colors.ok, bg: colors.okBg },
-  off: { label: 'Off', fg: colors.muted, bg: colors.offBg },
-};
+function statusMeta(s: Status) {
+  return {
+    overdue: { label: 'Overdue', fg: colors.danger, bg: colors.dangerBg },
+    soon: { label: 'Due soon', fg: colors.warn, bg: colors.warnBg },
+    ok: { label: 'OK', fg: colors.ok, bg: colors.okBg },
+    off: { label: 'Off', fg: colors.muted, bg: colors.offBg },
+  }[s];
+}
 
 export function statusColor(s: Status) {
-  return STATUS_META[s].fg;
+  return statusMeta(s).fg;
 }
 
 export function StatusPill({ status, label }: { status: Status; label?: string }) {
-  const m = STATUS_META[status];
+  const m = statusMeta(status);
   return (
     <View style={[styles.pill, { backgroundColor: m.bg }]}>
       <Text style={[styles.pillText, { color: m.fg }]}>{label ?? m.label}</Text>
@@ -177,9 +185,19 @@ export function SectionTitle({ children, right }: { children: ReactNode; right?:
   );
 }
 
-export function Chip({ label, selected, onPress }: { label: string; selected: boolean; onPress: () => void }) {
+export function Chip({
+  label,
+  selected,
+  onPress,
+  onLongPress,
+}: {
+  label: string;
+  selected: boolean;
+  onPress: () => void;
+  onLongPress?: () => void;
+}) {
   return (
-    <Pressable onPress={onPress} style={[styles.chip, selected && styles.chipSelected]}>
+    <Pressable onPress={onPress} onLongPress={onLongPress} style={[styles.chip, selected && styles.chipSelected]}>
       <Text style={[styles.chipText, selected && styles.chipTextSelected]}>{label}</Text>
     </Pressable>
   );
@@ -197,7 +215,7 @@ export function Checkbox({ label, sub, checked, onPress }: { label: string; sub?
   );
 }
 
-export const styles = StyleSheet.create({
+export const styles = themedStyles((colors) => ({
   flex: { flex: 1 },
   screen: { flex: 1, backgroundColor: colors.bg },
   screenContent: { padding: 16, paddingBottom: 48, gap: 12 },
@@ -251,4 +269,4 @@ export const styles = StyleSheet.create({
   title: { fontSize: 18, fontWeight: '700', color: colors.text },
   body: { fontSize: 15, color: colors.text },
   muted: { fontSize: 14, color: colors.muted },
-});
+}));

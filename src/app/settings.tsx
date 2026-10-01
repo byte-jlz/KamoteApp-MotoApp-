@@ -1,5 +1,5 @@
 import { Alert, Linking, Switch, Text, View } from 'react-native';
-import { Button, Card, Screen, styles } from '../components/ui';
+import { Button, Card, Chip, Screen, styles } from '../components/ui';
 import {
   ensurePermission,
   notificationsSupported,
@@ -70,6 +70,21 @@ ${r.releaseNotes}` : ''}`, [
           <Text style={[styles.body, { color: colors.warn }]}>ℹ️ {notificationsUnavailableReason}</Text>
         </Card>
       )}
+      <Card style={{ gap: 10 }}>
+        <Text style={styles.body}>Appearance</Text>
+        <View style={[styles.row, { gap: 8 }]}>
+          {(
+            [
+              ['light', '☀️ Light'],
+              ['dark', '🌙 Dark'],
+              ['system', '📱 System'],
+            ] as const
+          ).map(([value, label]) => (
+            <Chip key={value} label={label} selected={settings.theme === value} onPress={() => updateSettings({ theme: value })} />
+          ))}
+        </View>
+        <Text style={styles.hint}>System follows your phone’s dark mode setting.</Text>
+      </Card>
       <Card>
         <Row
           title="Maintenance reminders"

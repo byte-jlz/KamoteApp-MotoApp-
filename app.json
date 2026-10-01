@@ -5,7 +5,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.motopms.app"
@@ -30,6 +30,22 @@
         "expo-notifications",
         {
           "color": "#EA580C"
+        }
+      ],
+      "expo-image",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "MotoPMS lets you pick photos and videos of your rides, parts and receipts.",
+          "cameraPermission": "MotoPMS lets you take photos and videos of your rides, parts and receipts.",
+          "microphonePermission": "MotoPMS records sound when you take videos of your rides."
+        }
+      ],
+      "expo-video",
+      [
+        "expo-navigation-bar",
+        {
+          "enforceContrast": false
         }
       ]
     ],

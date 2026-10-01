@@ -18,7 +18,8 @@ interface Template {
   description: string;
   intervalKm: number | null;
   intervalMonths: number | null;
-  types: BikeType[]; // bike types where this is enabled by default
+  types: BikeType[]; // bike types where this is recommended
+  important?: boolean; // highlighted first in recommendations
   overrides?: Partial<Record<BikeType, { intervalKm?: number | null; intervalMonths?: number | null }>>;
 }
 
@@ -30,6 +31,7 @@ const CHAIN: BikeType[] = ['underbone', 'manual', 'bigbike'];
 export const TEMPLATES: Template[] = [
   {
     key: 'engine_oil',
+    important: true,
     name: 'Engine Oil Change',
     description: 'Replace engine oil. The most important PMS item.',
     intervalKm: 1500,
@@ -48,6 +50,7 @@ export const TEMPLATES: Template[] = [
   },
   {
     key: 'gear_oil',
+    important: true,
     name: 'Gear Oil',
     description: 'Replace final drive / transmission gear oil.',
     intervalKm: 3000,
@@ -72,6 +75,7 @@ export const TEMPLATES: Template[] = [
   },
   {
     key: 'chain',
+    important: true,
     name: 'Chain Clean & Lube',
     description: 'Clean, lube and adjust chain slack.',
     intervalKm: 500,
@@ -98,6 +102,7 @@ export const TEMPLATES: Template[] = [
   },
   {
     key: 'brakes',
+    important: true,
     name: 'Brake Pads / Shoes Check',
     description: 'Check pad and shoe thickness; adjust or replace.',
     intervalKm: 3000,
@@ -114,6 +119,7 @@ export const TEMPLATES: Template[] = [
   },
   {
     key: 'tires',
+    important: true,
     name: 'Tire Pressure & Tread',
     description: 'Check tire pressure, tread depth and sidewall cracks.',
     intervalKm: 1000,
@@ -165,9 +171,39 @@ export function defaultItems(type: BikeType, odometer: number, dateISO: string):
       description: t.description,
       intervalKm: o.intervalKm !== undefined ? o.intervalKm : t.intervalKm,
       intervalMonths: o.intervalMonths !== undefined ? o.intervalMonths : t.intervalMonths,
-      enabled: t.types.includes(type),
+      enabled: false, // the rider picks what to track; see recommendedItems()
       lastKm: odometer,
       lastDate: dateISO,
     };
   });
+}
+
+const ITEM_ICONS: Record<string, string> = {
+  engine_oil: '🛢️',
+  oil_filter: '🧪',
+  gear_oil: '⚙️',
+  cvt_cleaning: '🌀',
+  drive_belt: '➰',
+  chain: '⛓️',
+  air_filter: '💨',
+  spark_plug: '⚡',
+  brakes: '🛑',
+  brake_fluid: '💧',
+  tires: '⭕',
+  battery: '🔋',
+  valve_clearance: '🔧',
+  coolant: '🌡️',
+  throttle_body: '🧼',
+};
+
+export function itemIcon(key: string) {
+  return ITEM_ICONS[key] ?? '🛠️';
+}
+
+/** Untracked items the system suggests for this bike type — important ones first. */
+export function recommendedItems(type: BikeType, items: MaintItem[]) {
+  return TEMPLATES.filter((t) => t.types.includes(type))
+    .sort((a, b) => Number(!!b.important) - Number(!!a.important))
+    .map((t) => ({ item: items.find((i) => i.key === t.key && !i.enabled && !i.dismissed), important: !!t.important }))
+    .filter((x): x is { item: MaintItem; important: boolean } => !!x.item);
 }

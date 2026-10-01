@@ -20,12 +20,17 @@ jobs:
   scrape:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    defaults:
+      run:
+        # The scraper lives in its own folder with its own package.json, separate from the Expo app.
+        working-directory: scraper
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
+          cache-dependency-path: scraper/package-lock.json
       - run: npm ci
       - run: npm test
       - name: Scrape, save and notify

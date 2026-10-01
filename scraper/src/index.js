@@ -18,6 +18,28 @@ function env(name) {
   return v;
 }
 
+/**
+ * Fail fast with a clear message if the "service role" secret is really the public anon/publishable key,
+ * which can't write (every insert would be rejected by row-level security).
+ */
+function checkServiceKey(key) {
+  if (key.startsWith('sb_secret_')) return;
+  const wrong = (what) => {
+    throw new Error(
+      `SUPABASE_SERVICE_ROLE_KEY holds the ${what}. Use the service_role key (Legacy API keys tab) ` +
+        'or a Secret key (sb_secret_…) from Supabase → Project Settings → API Keys.',
+    );
+  };
+  if (key.startsWith('sb_publishable_')) wrong('publishable key');
+  try {
+    const role = JSON.parse(Buffer.from(key.split('.')[1], 'base64url').toString()).role;
+    if (role && role !== 'service_role') wrong(`"${role}" key`);
+  } catch (e) {
+    if (e.message.startsWith('SUPABASE_SERVICE_ROLE_KEY')) throw e;
+    // Not a JWT we can read — let Supabase decide.
+  }
+}
+
 const fmtAmount = (a) => (a.amount_min === a.amount_max ? `₱${a.amount_max.toFixed(2)}` : `₱${a.amount_min.toFixed(2)}–${a.amount_max.toFixed(2)}`);
 
 /** Pick one figure per (Tuesday, fuel): the most recently published headline wins (estimates get refined). */
@@ -112,6 +134,7 @@ async function main() {
     return;
   }
 
+  checkServiceKey(env('SUPABASE_SERVICE_ROLE_KEY'));
   const db = createClient(env('SUPABASE_URL'), env('SUPABASE_SERVICE_ROLE_KEY'), { auth: { persistSession: false } });
 
   // Headlines (title + link) for the app's news list; existing URLs are left alone.

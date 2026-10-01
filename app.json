@@ -39,10 +39,16 @@
     },
     "updates": {
       "checkAutomatically": "NEVER",
-      "fallbackToCacheTimeout": 0
+      "fallbackToCacheTimeout": 0,
+      "url": "https://u.expo.dev/3c9e378f-75b0-4717-9241-2a7a390a048b"
     },
     "extra": {
-      "updateManifestUrl": ""
-    }
+      "updateManifestUrl": "",
+      "router": {},
+      "eas": {
+        "projectId": "3c9e378f-75b0-4717-9241-2a7a390a048b"
+      }
+    },
+    "owner": "julzplaza9"
   }
 }

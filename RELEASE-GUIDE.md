@@ -1,4 +1,4 @@
-# MotoPMS — Release & Update Guide
+# MotoMonitor — Release & Update Guide
 
 How to build the APK, ship changes, and make old versions of the app ask users to update.
 
@@ -48,7 +48,7 @@ EAS uses Git to know which files to upload.
 ```
 git init
 git add .
-git commit -m "MotoPMS 1.0.0"
+git commit -m "MotoMonitor 1.0.0"
 ```
 
 Commit again before every build or update (`git add .` then `git commit -m "what changed"`).
@@ -84,7 +84,7 @@ npm run build:apk
 
 **Publish it:**
 1. In your `motopms-releases` repo on GitHub, go to **Releases → Create a new release**.
-2. Tag: `v1.0.0`. Title: `MotoPMS 1.0.0`.
+2. Tag: `v1.0.0`. Title: `MotoMonitor 1.0.0`.
 3. Attach the APK file and **rename it to exactly `MotoPMS.apk`**.
 4. Publish.
 

@@ -1,10 +1,10 @@
-import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
+import { DarkTheme, DefaultTheme, router, Stack, ThemeProvider } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { NavigationBar } from 'expo-navigation-bar';
 import { useEffect } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { UpdatePrompt } from '../components/UpdatePrompt';
-import { configureNotifications, ensurePermission } from '../lib/notifications';
+import { configureNotifications, ensurePermission, onFuelAlertTap, syncFuelAlerts } from '../lib/notifications';
 import { StoreProvider, useStore } from '../lib/store';
 import { colors } from '../lib/theme';
 
@@ -16,6 +16,15 @@ function RootStack() {
   useEffect(() => {
     if (ready && settings.remindersEnabled) ensurePermission();
   }, [ready, settings.remindersEnabled]);
+
+  // Keep this phone registered for fuel price pushes (and its on/off choice) in Supabase.
+  useEffect(() => {
+    if (ready) syncFuelAlerts(settings.fuelAlerts);
+  }, [ready, settings.fuelAlerts]);
+
+  useEffect(() => {
+    if (ready) return onFuelAlertTap(() => router.push('/fuel'));
+  }, [ready]);
 
   if (!ready) {
     return (
@@ -60,6 +69,7 @@ function RootStack() {
         <Stack.Screen name="album-form" options={{ presentation: 'modal' }} />
         <Stack.Screen name="profile-form" options={{ title: 'Edit Profile', presentation: 'modal' }} />
         <Stack.Screen name="club-form" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="fuel" options={{ title: 'Fuel Prices' }} />
         <Stack.Screen name="bike/[id]/photo/[photoId]" options={{ title: '' }} />
       </Stack>
       <UpdatePrompt />

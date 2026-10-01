@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "MotoPMS",
+    "name": "MotoMonitor",
     "slug": "motopms",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -18,7 +18,8 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.motopms.app"
+      "package": "com.motopms.app",
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -29,16 +30,17 @@
       [
         "expo-notifications",
         {
-          "color": "#EA580C"
+          "color": "#EA580C",
+          "defaultChannel": "fuel-alerts"
         }
       ],
       "expo-image",
       [
         "expo-image-picker",
         {
-          "photosPermission": "MotoPMS lets you pick photos and videos of your rides, parts and receipts.",
-          "cameraPermission": "MotoPMS lets you take photos and videos of your rides, parts and receipts.",
-          "microphonePermission": "MotoPMS records sound when you take videos of your rides."
+          "photosPermission": "MotoMonitor lets you pick photos and videos of your rides, parts and receipts.",
+          "cameraPermission": "MotoMonitor lets you take photos and videos of your rides, parts and receipts.",
+          "microphonePermission": "MotoMonitor records sound when you take videos of your rides."
         }
       ],
       "expo-video",

@@ -44,7 +44,7 @@ export function UpdatePrompt() {
             <>
               <Text style={[styles.title, { textAlign: 'center' }]}>Update ready</Text>
               <Text style={[styles.muted, { textAlign: 'center' }]}>
-                A new version of MotoPMS has been downloaded. Restart the app to use it — your data is kept.
+                A new version of MotoMonitor has been downloaded. Restart the app to use it — your data is kept.
               </Text>
               <Button title="Restart now" onPress={() => applyOtaUpdate()} />
               <Button title="Later" variant="ghost" onPress={() => setDismissed(true)} />

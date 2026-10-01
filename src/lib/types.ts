@@ -47,6 +47,7 @@ export interface ServiceLog {
 export interface Settings {
   remindersEnabled: boolean;
   odometerReminder: boolean;
+  fuelAlerts: boolean;
   theme: 'system' | 'light' | 'dark';
 }
 

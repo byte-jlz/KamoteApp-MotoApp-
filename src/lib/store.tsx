@@ -28,7 +28,7 @@ const EMPTY: Data = {
   albums: [],
   profile: { fullName: '' },
   clubs: [],
-  settings: { remindersEnabled: true, odometerReminder: true, theme: 'system' },
+  settings: { remindersEnabled: true, odometerReminder: true, fuelAlerts: true, theme: 'system' },
 };
 
 export interface NewBike {

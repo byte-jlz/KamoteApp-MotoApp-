@@ -156,7 +156,7 @@ async function doReschedule(N: NotificationsModule, bikes: Bike[], settings: Set
     await N.scheduleNotificationAsync({
       content: {
         title: '🏍️ Update your odometer',
-        body: 'Log your current mileage so MotoPMS can keep your service reminders accurate.',
+        body: 'Log your current mileage so MotoMonitor can keep your service reminders accurate.',
       },
       trigger: {
         type: N.SchedulableTriggerInputTypes.WEEKLY,
@@ -173,8 +173,50 @@ export async function sendTestNotification() {
   const N = getModule();
   if (!N || !(await ensurePermission())) return false;
   await N.scheduleNotificationAsync({
-    content: { title: '🔧 MotoPMS test', body: 'Reminders are working. Ride safe!' },
+    content: { title: '🔧 MotoMonitor test', body: 'Reminders are working. Ride safe!' },
     trigger: { type: N.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: 3, channelId: CHANNEL },
   });
   return true;
+}
+
+// ── Fuel price alerts (pushed from the scraper through Firebase Cloud Messaging) ──
+
+export const FUEL_CHANNEL = 'fuel-alerts';
+
+/**
+ * Make sure this phone is registered in Supabase with its FCM token, with alerts on or off.
+ * Safe to call often; failures (offline, Expo Go) are logged and ignored.
+ */
+export async function syncFuelAlerts(enabled: boolean) {
+  const N = getModule();
+  if (!N || Platform.OS !== 'android') return;
+  try {
+    await N.setNotificationChannelAsync(FUEL_CHANNEL, {
+      name: 'Fuel price alerts',
+      importance: N.AndroidImportance.HIGH,
+      lightColor: '#EA580C',
+    });
+    const allowed = enabled && (await ensurePermission());
+    const { data: token } = await N.getDevicePushTokenAsync();
+    const { registerDevice } = await import('./fuel');
+    await registerDevice(String(token), Platform.OS, allowed);
+  } catch (e) {
+    console.warn('Fuel alert registration failed', e);
+  }
+}
+
+/** Calls `open` when the user taps a fuel alert — including the one that launched the app. */
+export function onFuelAlertTap(open: () => void) {
+  const N = getModule();
+  if (!N) return () => {};
+  const isFuel = (r: { notification: { request: { content: { data?: Record<string, unknown> | null } } } } | null) =>
+    r?.notification.request.content.data?.screen === 'fuel';
+  if (isFuel(N.getLastNotificationResponse())) {
+    N.clearLastNotificationResponse();
+    open();
+  }
+  const sub = N.addNotificationResponseReceivedListener((r) => {
+    if (isFuel(r)) open();
+  });
+  return () => sub.remove();
 }

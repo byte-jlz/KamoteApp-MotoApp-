@@ -54,7 +54,7 @@ ${r.releaseNotes}` : ''}`, [
         { text: 'Download', onPress: () => Linking.openURL(r.downloadUrl) },
       ]);
     } else {
-      Alert.alert('You are up to date', `MotoPMS ${info.version} is the latest version.`);
+      Alert.alert('You are up to date', `MotoMonitor ${info.version} is the latest version.`);
     }
   };
 
@@ -98,6 +98,12 @@ ${r.releaseNotes}` : ''}`, [
           value={settings.odometerReminder}
           onChange={(v) => updateSettings({ odometerReminder: v })}
         />
+        <Row
+          title="Fuel price alerts"
+          sub="Get notified when a gasoline, diesel or kerosene price hike or rollback is announced."
+          value={settings.fuelAlerts}
+          onChange={(v) => updateSettings({ fuelAlerts: v })}
+        />
       </Card>
       {notificationsSupported && <Button title="Send test notification" variant="secondary" onPress={test} />}
       <Card style={{ gap: 6 }}>
@@ -113,7 +119,7 @@ ${r.releaseNotes}` : ''}`, [
         <Text style={styles.title}>How reminders work</Text>
         <Text style={styles.muted}>
           Each item is due by distance or by time — whichever comes first. Time-based reminders are exact. For
-          distance, MotoPMS estimates the date from your average daily riding, so update your odometer regularly for the
+          distance, MotoMonitor estimates the date from your average daily riding, so update your odometer regularly for the
           best accuracy.
         </Text>
         <Text style={styles.muted}>

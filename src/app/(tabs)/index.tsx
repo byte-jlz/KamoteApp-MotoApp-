@@ -1,5 +1,6 @@
 import { router } from 'expo-router';
 import { Pressable, Text, View } from 'react-native';
+import { FuelCard } from '../../components/FuelCard';
 import { Button, Card, ProgressBar, Screen, StatusPill, styles } from '../../components/ui';
 import { bikeTypeLabel } from '../../lib/defaults';
 import { fmtKm } from '../../lib/format';
@@ -49,10 +50,11 @@ export default function Garage() {
 
   return (
     <Screen>
+      <FuelCard />
       {bikes.length === 0 ? (
         <Card style={{ alignItems: 'center', paddingVertical: 40, gap: 10 }}>
           <Text style={{ fontSize: 56 }}>🏍️</Text>
-          <Text style={[styles.title, { fontSize: 22 }]}>Welcome to MotoPMS</Text>
+          <Text style={[styles.title, { fontSize: 22 }]}>Welcome to MotoMonitor</Text>
           <Text style={[styles.muted, { textAlign: 'center', marginBottom: 10 }]}>
             Add your motorcycle and we’ll remind you when it’s time for an oil change, gear oil, CVT cleaning, chain
             lube and the rest of your preventive maintenance.

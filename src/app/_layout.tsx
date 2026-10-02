@@ -3,10 +3,18 @@ import { StatusBar } from 'expo-status-bar';
 import { NavigationBar } from 'expo-navigation-bar';
 import { useEffect } from 'react';
 import { ActivityIndicator, View } from 'react-native';
+import { NudgeBanner } from '../components/NudgeBanner';
 import { UpdatePrompt } from '../components/UpdatePrompt';
 import { AuthProvider, useAuth } from '../lib/auth';
 import { takePendingCode } from '../lib/friends';
-import { configureNotifications, ensurePermission, onFuelAlertTap, syncFuelAlerts } from '../lib/notifications';
+import {
+  configureNotifications,
+  ensurePermission,
+  onNotificationReceived,
+  onNotificationTap,
+  syncFuelAlerts,
+} from '../lib/notifications';
+import { handleIncoming, handleNudgeTap, linkThisPhone, retryPendingUnlink, showAlarmTipOnce } from '../lib/nudges';
 import { usePresence } from '../lib/presence';
 import { StoreProvider, useStore } from '../lib/store';
 import { useCloudSync } from '../lib/useSync';
@@ -57,9 +65,34 @@ function RootStack() {
     if (ready) syncFuelAlerts(settings.fuelAlerts);
   }, [ready, settings.fuelAlerts]);
 
+  // Nudges: link this phone to the account (every start, so it follows the latest login), or finish an
+  // offline log out. The first time only: ask to allow notifications and show the "get every alarm" tip.
   useEffect(() => {
-    if (ready) return onFuelAlertTap(() => router.push('/fuel'));
-  }, [ready]);
+    if (!ready || mode === 'loading') return;
+    if (!friendsUser) {
+      retryPendingUnlink();
+      return;
+    }
+    let tip: ReturnType<typeof setTimeout> | undefined;
+    linkThisPhone().then((linked) => {
+      if (linked) tip = setTimeout(() => showAlarmTipOnce(true), 2000);
+    });
+    return () => clearTimeout(tip);
+  }, [ready, mode, friendsUser]);
+
+  // A nudge arriving while the app is open: in-app banner (and sound).
+  useEffect(() => {
+    if (friendsUser) return onNotificationReceived(handleIncoming);
+  }, [friendsUser]);
+
+  // Taps on notifications (and their reply buttons), including the one that launched the app.
+  useEffect(() => {
+    if (!ready || mode === 'loading') return;
+    return onNotificationTap((t) => {
+      if (t.data.screen === 'fuel') router.push('/fuel');
+      else if (friendsUser) handleNudgeTap(t);
+    });
+  }, [ready, mode, friendsUser]);
 
   if (!ready) return <Loading />;
 
@@ -119,6 +152,8 @@ function RootStack() {
         <Stack.Protected guard={inApp && loggedIn}>
           <Stack.Screen name="account" options={{ title: 'Account' }} />
           <Stack.Screen name="delete-account" options={{ title: 'Delete account' }} />
+          <Stack.Screen name="nudge/[id]" options={{ title: 'Nudge', presentation: 'modal' }} />
+          <Stack.Screen name="nudge-help" options={{ title: 'Get every alarm' }} />
           <Stack.Screen name="friends/add" options={{ title: 'Add friend' }} />
           <Stack.Screen name="friends/qr" options={{ title: 'My QR code' }} />
           <Stack.Screen name="friends/requests" options={{ title: 'Friend requests' }} />
@@ -130,6 +165,7 @@ function RootStack() {
         <Stack.Screen name="privacy" options={{ title: 'Privacy notice' }} />
       </Stack>
       <UpdatePrompt />
+      <NudgeBanner />
       {/* Android button bar: match the app instead of the system's light contrast backing. */}
       <NavigationBar style={themeName} />
     </ThemeProvider>

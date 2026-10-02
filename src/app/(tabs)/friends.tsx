@@ -2,6 +2,7 @@ import { router, useFocusEffect } from 'expo-router';
 import { ReactNode, useCallback, useState } from 'react';
 import { AppState, Pressable, RefreshControl, Text, View } from 'react-native';
 import { ActiveStatusToggle, LoginForFriendsCard, OfflineNotice, RiderRow } from '../../components/Friends';
+import { NudgeRowButton } from '../../components/Nudges';
 import { ScanQrSheet } from '../../components/ScanQrSheet';
 import { Button, Card, Screen, SectionTitle, styles } from '../../components/ui';
 import { useAuth } from '../../lib/auth';
@@ -105,7 +106,16 @@ function FriendsList({ userId }: { userId: string }) {
           <Card style={{ paddingVertical: 4 }}>
             {sorted.map((f, i) => (
               <Divided key={f.id} index={i}>
-                <RiderRow rider={f} sub={statusText(f.status, f.minutesAgo)} />
+                <RiderRow
+                  rider={f}
+                  sub={statusText(f.status, f.minutesAgo)}
+                  right={
+                    <View style={[styles.row, { gap: 4 }]}>
+                      <NudgeRowButton rider={f} />
+                      <Text style={local.chevron}>›</Text>
+                    </View>
+                  }
+                />
               </Divided>
             ))}
           </Card>

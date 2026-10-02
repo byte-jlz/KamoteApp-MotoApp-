@@ -20,6 +20,7 @@ import {
 import { fmtAgo } from '../lib/format';
 import { colors, themedStyles } from '../lib/theme';
 import { initials } from './Avatar';
+import { NudgePanel } from './Nudges';
 import { Button, Card, styles } from './ui';
 
 /** Initials in a circle, with a green dot when online. */
@@ -284,6 +285,7 @@ export function RiderCard({ rider: initial, add, footer }: { rider: Rider; add?:
         <Button title="Unblock" variant="secondary" onPress={unblock} disabled={off} />
       ) : (
         <View style={{ gap: 10 }}>
+          {rider.relation === 'friends' && <NudgePanel rider={rider} />}
           {rider.relation === 'none' && <Button title="➕ Add friend" onPress={addFriend} disabled={off} />}
           {rider.relation === 'outgoing' && <Button title="Cancel request" variant="secondary" onPress={cancel} disabled={off} />}
           {rider.relation === 'incoming' && (

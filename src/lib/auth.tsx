@@ -3,6 +3,7 @@ import { AuthError, isAuthRetryableFetchError, User } from '@supabase/supabase-j
 import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, AppState } from 'react-native';
 import { dataKeyFor } from './localData';
+import { unlinkThisPhone } from './nudges';
 import { flushStore } from './store';
 import { callFunction, supabase } from './supabase';
 import { clearAccountData, guestSummary, moveAccountToGuest, moveGuestIntoAccount, stopSync } from './sync';
@@ -174,9 +175,10 @@ function useAuthValue() {
     }
   }, []);
 
-  /** Leave the account and go back to the welcome screen. */
+  /** Leave the account and go back to the welcome screen. This phone stops getting the account's nudges. */
   const endSession = useCallback(
     async (message: string | null) => {
+      await unlinkThisPhone();
       await discardSession();
       setNotice(message);
       persist({ mode: 'welcome' });
@@ -189,6 +191,7 @@ function useAuthValue() {
   useEffect(() => {
     const { data } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'SIGNED_OUT' && !signingOut.current && savedRef.current?.mode === 'account') {
+        unlinkThisPhone();
         setNotice('You were logged out. Please log in again.');
         persist({ mode: 'welcome' });
       }

@@ -1,5 +1,6 @@
 import { router } from 'expo-router';
 import { Alert, Linking, Switch, Text, View } from 'react-native';
+import { NudgeSettingsCard } from '../components/Nudges';
 import { Button, Card, Chip, Screen, styles } from '../components/ui';
 import {
   ensurePermission,
@@ -55,6 +56,7 @@ function AccountCard() {
 
 export default function SettingsScreen() {
   const { settings, updateSettings } = useStore();
+  const { account } = useAuth();
 
   const toggleReminders = async (v: boolean) => {
     if (v && notificationsSupported && !(await ensurePermission())) {
@@ -136,6 +138,7 @@ ${r.releaseNotes}` : ''}`, [
         />
       </Card>
       {notificationsSupported && <Button title="Send test notification" variant="secondary" onPress={test} />}
+      {account ? <NudgeSettingsCard key={account.userId} userId={account.userId} /> : null}
       <Card style={{ gap: 6 }}>
         <Text style={styles.title}>About</Text>
         <Text style={styles.muted}>

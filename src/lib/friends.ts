@@ -47,7 +47,7 @@ function isNetwork(message: string) {
   return /network|fetch|timed? ?out|failed to connect/i.test(message);
 }
 
-async function rpc<T>(fn: string, args?: object): Promise<Result<T>> {
+export async function rpc<T>(fn: string, args?: object): Promise<Result<T>> {
   try {
     const { data, error } = await supabase.rpc(fn, args);
     if (!error) return { ok: true, data: data as T };

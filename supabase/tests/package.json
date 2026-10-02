@@ -4,9 +4,10 @@
   "type": "module",
   "description": "Database and sync tests for MotoMonitor. Separate from the app so they never affect the APK.",
   "scripts": {
-    "test": "npm run test:accounts && npm run test:friends && npm run test:rls && npm run test:sync",
+    "test": "npm run test:accounts && npm run test:friends && npm run test:nudges && npm run test:rls && npm run test:sync",
     "test:accounts": "node accounts.test.mjs",
     "test:friends": "node friends.test.mjs",
+    "test:nudges": "node nudges.test.mjs",
     "test:rls": "node rls.test.mjs",
     "test:sync": "node sync/copy-lib.mjs && cd sync && node --import tsx --import ./register.mjs test.mts"
   },

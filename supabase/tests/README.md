@@ -10,7 +10,7 @@ From the `MotoApp` folder:
 ```
 cd supabase/tests
 npm install        # first time only
-npm test           # runs all four; each prints PASS/FAIL lines and ends with ALL PASSED
+npm test           # runs all five; each prints PASS/FAIL lines and ends with ALL PASSED
 ```
 
 Or one at a time:
@@ -19,6 +19,7 @@ Or one at a time:
 |---|---|
 | `npm run test:accounts` | Profiles, sign-up trigger, Row Level Security on rider data, "newest wins" sync rule, admin functions |
 | `npm run test:friends` | Friends, requests, blocking, online status and privacy switch, rate limits, QR codes and Quick add, deleting an account |
+| `npm run test:nudges` | Linking phones to accounts, Nudge/Alarm rules (friends only, blocks, limits, 60/hour cap), mutes and settings, one reply within 30 minutes, admin count, deleting an account |
 | `npm run test:rls` | Every table (including the fuel tables from `scraper/supabase/schema.sql`) has Row Level Security on |
 | `npm run test:sync` | The app's sync code (`src/lib/sync.ts` and friends) with simulated phones and a fake server |
 

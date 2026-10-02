@@ -213,12 +213,15 @@ const ONLINE_REFRESH_MS = 30_000;
 
 async function dashboardView() {
   show(h('p', { class: 'muted' }, 'Loading…'));
-  const [statsRows, riders, online] = await Promise.all([
+  const [statsRows, riders, online, nudgeRows] = await Promise.all([
     sb.rpc('admin_stats').then(check),
     sb.rpc('admin_list_riders').then(check),
     sb.rpc('admin_online_riders').then(check),
+    // A count only: message text is never stored, and who nudged whom is never shown here.
+    sb.rpc('admin_nudge_stats').then(check),
   ]);
   const stats = statsRows[0] ?? {};
+  const nudges = nudgeRows[0] ?? {};
 
   const stat = (num, label, alert) => h('div', { class: `stat ${alert ? 'alert' : ''}` }, h('div', { class: 'num' }, fmtNum(num)), h('div', { class: 'label' }, label));
 
@@ -295,6 +298,7 @@ async function dashboardView() {
       stat(stats.service_logs_this_month, 'Service logs this month'),
       stat(stats.items_overdue, 'Items overdue', Number(stats.items_overdue) > 0),
       onlineStat,
+      stat(nudges.nudges_today, 'Nudges sent today'),
     ),
     onlineCard,
     h(

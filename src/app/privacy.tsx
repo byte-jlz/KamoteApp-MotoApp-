@@ -42,6 +42,8 @@ export default function Privacy() {
         <P>• Your motorcycles, odometer readings, maintenance items and service history</P>
         <P>• Your clubs and your app settings</P>
         <P>• Your friends, friend requests and blocked riders, and when you were last active in the app</P>
+        <P>• This phone’s notification token, linked to your account so your friends’ nudges reach you</P>
+        <P>• Who nudged whom and when, and the quick reply chosen, for 2 days (never the message)</P>
         <P>• When you signed up and when you last logged in</P>
         <P>
           Your password is never stored in readable form, and nobody (including the app admin) can see it.
@@ -78,6 +80,23 @@ export default function Privacy() {
         <P>
           To hide it, turn off Active status on the Friends tab. Your friends and the app admin then see you as offline,
           you see your friends as offline too, and we stop recording when you were last active.
+        </P>
+      </Section>
+
+      <Section title="Nudges">
+        <P>
+          Friends can send you a 👋 nudge or a loud 🚨 alarm, with an optional short message, and you can answer with a
+          quick reply. To deliver them, your phone’s notification token is linked to your account while you’re logged
+          in on that phone. Logging out or deleting your account removes the link.
+        </P>
+        <P>
+          The message goes to your friend’s phone through Firebase Cloud Messaging (Google) and is not stored by us.
+          We keep only who nudged whom, when, and the quick reply, for 2 days, to apply limits and show replies. The
+          app admin sees only how many nudges were sent each day.
+        </P>
+        <P>
+          You can turn off nudges or alarm nudges in Settings → Nudges, or mute one friend on their card. They aren’t
+          told.
         </P>
       </Section>
 

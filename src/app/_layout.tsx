@@ -7,6 +7,7 @@ import { UpdatePrompt } from '../components/UpdatePrompt';
 import { AuthProvider, useAuth } from '../lib/auth';
 import { configureNotifications, ensurePermission, onFuelAlertTap, syncFuelAlerts } from '../lib/notifications';
 import { StoreProvider, useStore } from '../lib/store';
+import { useCloudSync } from '../lib/useSync';
 import { colors } from '../lib/theme';
 
 configureNotifications();
@@ -20,18 +21,15 @@ function Loading() {
 }
 
 function RootStack() {
-  const { ready, settings, themeName, profile, updateProfile } = useStore();
+  const { ready, settings, themeName } = useStore();
   const { mode, account } = useAuth();
   const loggedIn = mode === 'account';
   const mustChange = loggedIn && !!account?.mustChangePassword;
   // Guests and logged-in riders use the app normally; a flagged account sees only the password screen.
   const inApp = mode === 'guest' || (loggedIn && !mustChange);
 
-  // A new account's name (typed at sign-up) fills in the profile on this phone if it's still empty.
-  const serverName = account?.fullName?.trim();
-  useEffect(() => {
-    if (ready && serverName && !profile.fullName.trim()) updateProfile(serverName);
-  }, [ready, serverName, profile.fullName, updateProfile]);
+  // Logged-in riders sync with the cloud (not while a password change is required: the server refuses anyway).
+  useCloudSync(inApp && loggedIn && account ? account.userId : null);
 
   useEffect(() => {
     if (ready && settings.remindersEnabled) ensurePermission();

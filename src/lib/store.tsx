@@ -5,37 +5,30 @@ import { defaultItems } from './defaults';
 import { uid } from './format';
 import { rescheduleAll } from './notifications';
 import { deleteMediaFile, makeVideoThumb, saveMediaFile } from './photos';
+import { Data, EMPTY, parseData } from './localData';
+import { trackSaved } from './sync';
 import { setThemeName, ThemeName } from './theme';
-import { Album, Bike, BikeType, Club, CustomAlbum, MaintItem, Photo, Profile, ServiceLog, Settings } from './types';
+import { Album, Bike, BikeType, Club, CustomAlbum, MaintItem, Photo, ServiceLog, Settings } from './types';
 
-// Guest data has always lived under this key; keep it so existing riders' data loads unchanged.
-const GUEST_KEY = 'motopms:data:v1';
 const MAX_READINGS = 60;
 
-/** Where the app's data lives on the phone: the guest copy, or a logged-in account's copy. */
-export function dataKeyFor(userId?: string | null) {
-  return userId ? `${GUEST_KEY}:user:${userId}` : GUEST_KEY;
+/** Save the data and note what changed, for cloud sync (guests too, so their records get change dates). */
+async function save(storageKey: string, data: Data) {
+  try {
+    await AsyncStorage.setItem(storageKey, JSON.stringify(data));
+    await trackSaved(storageKey, data);
+  } catch (e) {
+    console.warn('Failed to save', e);
+  }
 }
 
-interface Data {
-  bikes: Bike[];
-  logs: ServiceLog[];
-  photos: Photo[];
-  albums: CustomAlbum[];
-  profile: Profile;
-  clubs: Club[];
-  settings: Settings;
-}
+// The mounted store's "save now" (login and logout move data between storage keys, so it must be on disk first).
+let activeFlush: (() => Promise<void>) | null = null;
 
-const EMPTY: Data = {
-  bikes: [],
-  logs: [],
-  photos: [],
-  albums: [],
-  profile: { fullName: '' },
-  clubs: [],
-  settings: { remindersEnabled: true, odometerReminder: true, fuelAlerts: true, theme: 'system' },
-};
+/** Write any change still waiting on the save debounce. */
+export function flushStore() {
+  return activeFlush ? activeFlush() : Promise.resolve();
+}
 
 export interface NewBike {
   name: string;
@@ -75,34 +68,31 @@ function useStoreValue(storageKey: string) {
   const [data, setData] = useState<Data>(EMPTY);
   const [ready, setReady] = useState(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const latest = useRef(data); // what the pending save will write
+  const latest = useRef(data); // the newest data: what the pending save will write, and what sync reads
 
   useEffect(() => {
     AsyncStorage.getItem(storageKey)
       .then((raw) => {
-        if (raw) {
-          const parsed = JSON.parse(raw) as Partial<Data>;
-          setData({
-            ...EMPTY,
-            ...parsed,
-            profile: { ...EMPTY.profile, ...parsed.profile },
-            settings: { ...EMPTY.settings, ...parsed.settings },
-          });
-        }
+        if (raw) setData(parseData(raw));
       })
       .catch((e) => console.warn('Failed to load data', e))
       .finally(() => setReady(true));
   }, [storageKey]);
 
   // Logging in or out swaps the store; save any change still waiting on the debounce first.
-  useEffect(
-    () => () => {
+  useEffect(() => {
+    const flush = async () => {
       if (!saveTimer.current) return;
       clearTimeout(saveTimer.current);
-      AsyncStorage.setItem(storageKey, JSON.stringify(latest.current)).catch((e) => console.warn('Failed to save', e));
-    },
-    [storageKey],
-  );
+      saveTimer.current = null;
+      await save(storageKey, latest.current);
+    };
+    activeFlush = flush;
+    return () => {
+      if (activeFlush === flush) activeFlush = null;
+      flush();
+    };
+  }, [storageKey]);
 
   // Persist and refresh reminders after changes (debounced).
   useEffect(() => {
@@ -111,7 +101,7 @@ function useStoreValue(storageKey: string) {
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => {
       saveTimer.current = null;
-      AsyncStorage.setItem(storageKey, JSON.stringify(data)).catch((e) => console.warn('Failed to save', e));
+      save(storageKey, data);
       rescheduleAll(data.bikes, data.settings);
     }, 500);
   }, [data, ready, storageKey]);
@@ -331,6 +321,18 @@ function useStoreValue(storageKey: string) {
     });
   }, []);
 
+  /** Cloud sync: apply changes downloaded from the server, and delete media files they made unused. */
+  const applyRemote = useCallback((fn: (d: Data) => { data: Data; removedMedia: string[] }) => {
+    setData((d) => {
+      const r = fn(d);
+      r.removedMedia.forEach(deleteMediaFile);
+      return r.data;
+    });
+  }, []);
+
+  /** Cloud sync: the data as last rendered. */
+  const getData = useCallback(() => latest.current, []);
+
   const updateSettings = useCallback((patch: Partial<Settings>) => {
     setData((d) => ({ ...d, settings: { ...d.settings, ...patch } }));
   }, []);
@@ -365,8 +367,11 @@ function useStoreValue(storageKey: string) {
       saveClub,
       deleteClub,
       updateSettings,
+      storageKey,
+      applyRemote,
+      getData,
     }),
-    [ready, themeName, data, addBike, editBike, deleteBike, updateOdometer, saveItem, deleteItem, trackItems, dismissItem, logService, deleteLog, addMedia, updatePhoto, deletePhoto, saveAlbum, deleteAlbum, updateProfile, saveClub, deleteClub, updateSettings],
+    [storageKey, applyRemote, getData, ready, themeName, data, addBike, editBike, deleteBike, updateOdometer, saveItem, deleteItem, trackItems, dismissItem, logService, deleteLog, addMedia, updatePhoto, deletePhoto, saveAlbum, deleteAlbum, updateProfile, saveClub, deleteClub, updateSettings],
   );
 }
 

@@ -4,10 +4,23 @@ import { Alert, Text, View } from 'react-native';
 import { LogOutButton } from '../components/LogOutButton';
 import { Button, Card, Field, Screen, styles } from '../components/ui';
 import { normalizeUsername, useAuth } from '../lib/auth';
+import { fmtAgo } from '../lib/format';
+import { syncNow, SyncState } from '../lib/sync';
 import { colors } from '../lib/theme';
+import { useSyncState } from '../lib/useSync';
+
+function syncText(s: SyncState) {
+  if (s.status === 'syncing') return '🔄 Syncing…';
+  const when = s.lastSyncedAt ? `Last synced ${fmtAgo(s.lastSyncedAt)}` : 'Not synced yet';
+  const waiting = s.pending ? ` · ${s.pending} change${s.pending === 1 ? '' : 's'} waiting to upload` : '';
+  if (s.status === 'offline') return `📴 No internet. ${when}${waiting}`;
+  if (s.status === 'error') return `⚠️ Couldn’t sync. ${when}${waiting}`;
+  return `☁️ ${when}${waiting}`;
+}
 
 export default function AccountScreen() {
   const { account, updateUsername } = useAuth();
+  const sync = useSyncState();
   const [username, setUsername] = useState(account?.username ?? '');
   const [busy, setBusy] = useState(false);
   if (!account) return null;
@@ -35,6 +48,16 @@ export default function AccountScreen() {
           )}
         </View>
         <Text style={styles.body}>{account.email}</Text>
+      </Card>
+
+      <Card style={{ gap: 8 }}>
+        <Text style={styles.title}>Cloud backup</Text>
+        <Text style={styles.muted}>{syncText(sync)}</Text>
+        <Text style={styles.hint}>
+          Your bikes, maintenance, odometer readings, service history, clubs and settings are backed up and shared with
+          your other phones. Photos and videos stay on this phone.
+        </Text>
+        <Button title="Sync now" variant="secondary" onPress={() => syncNow()} disabled={sync.status === 'syncing'} />
       </Card>
 
       <Card>

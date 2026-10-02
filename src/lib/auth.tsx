@@ -1,9 +1,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AuthError, isAuthRetryableFetchError, User } from '@supabase/supabase-js';
 import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { AppState } from 'react-native';
-import { dataKeyFor } from './store';
+import { Alert, AppState } from 'react-native';
+import { dataKeyFor } from './localData';
+import { flushStore } from './store';
 import { callFunction, supabase } from './supabase';
+import { clearAccountData, guestSummary, moveAccountToGuest, moveGuestIntoAccount, stopSync } from './sync';
 
 /** Bump when the privacy notice changes in a way riders should agree to again. */
 export const PRIVACY_VERSION = '2026-10';
@@ -19,8 +21,6 @@ export interface Account {
   userId: string;
   email: string;
   username: string | null;
-  /** Name saved on the server (from sign-up, or set by an admin). Missing in login state saved by older builds. */
-  fullName?: string;
   role: 'rider' | 'admin';
   /** Set by an admin (new account or reset). The app shows nothing else until the password is changed. */
   mustChangePassword: boolean;
@@ -95,7 +95,7 @@ function fromAuthError(e: AuthError): AuthResult {
 async function loadProfile(user: User) {
   const { data, error } = await supabase
     .from('profiles')
-    .select('username, full_name, role, must_change_password, temp_password_expires_at, disabled, privacy_consent_at')
+    .select('username, role, must_change_password, temp_password_expires_at, disabled, privacy_consent_at')
     .eq('id', user.id)
     .maybeSingle();
   if (error || !data) return { error: error && /network|fetch/i.test(error.message) ? 'network' : 'unknown' };
@@ -103,7 +103,6 @@ async function loadProfile(user: User) {
     userId: user.id,
     email: user.email ?? '',
     username: data.username,
-    fullName: data.full_name ?? '',
     role: data.role === 'admin' ? 'admin' : 'rider',
     mustChangePassword: !!data.must_change_password,
     needsConsent: !data.privacy_consent_at,
@@ -113,6 +112,30 @@ async function loadProfile(user: User) {
     !!data.temp_password_expires_at &&
     new Date(data.temp_password_expires_at).getTime() < Date.now();
   return { account, disabled: !!data.disabled, tempExpired };
+}
+
+function plural(n: number, word: string) {
+  return `${n} ${word}${n === 1 ? '' : 's'}`;
+}
+
+/** Asked once per login when this phone has guest data. Resolves true for "Upload". */
+function askUpload(email: string, s: { bikes: number; logs: number }) {
+  return new Promise<boolean>((resolve) =>
+    Alert.alert(
+      'Upload your existing bikes and records to your account?',
+      `This phone has ${plural(s.bikes, 'motorcycle')} and ${plural(s.logs, 'service record')} saved as a guest. ` +
+        `Upload them to ${email} to back them up. Nothing already in your account is lost; if a record was changed ` +
+        `in both places, the newest change is kept.
+
+` +
+        `Not now: they stay on this phone as guest data, and come back if you log out.`,
+      [
+        { text: 'Not now', style: 'cancel', onPress: () => resolve(false) },
+        { text: 'Upload', onPress: () => resolve(true) },
+      ],
+      { cancelable: false },
+    ),
+  );
 }
 
 function useAuthValue() {
@@ -199,6 +222,14 @@ function useAuthValue() {
       if (problem !== null || !r.account) {
         await discardSession();
         return fail(problem ?? undefined);
+      }
+      // Guest data on this phone? Offer to merge it into the account (it then uploads with the next sync).
+      try {
+        await flushStore();
+        const guest = await guestSummary();
+        if (guest.hasData && (await askUpload(r.account.email, guest))) await moveGuestIntoAccount(r.account.userId);
+      } catch (e) {
+        console.warn('Failed to move guest data', e);
       }
       setNotice(null);
       persist({ mode: 'account', account: r.account });
@@ -334,7 +365,27 @@ function useAuthValue() {
     persist({ mode: 'guest' });
   }, [persist]);
 
-  const signOut = useCallback(() => endSession(null), [endSession]);
+  /**
+   * Log out. 'keep': the account's records (and photos) become this phone's guest data.
+   * 'remove': the account's copy and its photos are deleted from this phone. No choice: left as is (forced screen).
+   */
+  const signOut = useCallback(
+    async (choice?: 'keep' | 'remove') => {
+      const userId = savedRef.current?.account?.userId;
+      if (userId && choice) {
+        stopSync();
+        await flushStore();
+        try {
+          if (choice === 'keep') await moveAccountToGuest(userId);
+          else await clearAccountData(userId);
+        } catch (e) {
+          console.warn('Failed to move data on logout', e);
+        }
+      }
+      await endSession(null);
+    },
+    [endSession],
+  );
 
   const mode: AuthMode = saved ? saved.mode : 'loading';
   const account = saved?.mode === 'account' ? (saved.account ?? null) : null;

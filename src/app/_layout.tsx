@@ -118,6 +118,7 @@ function RootStack() {
         </Stack.Protected>
         <Stack.Protected guard={inApp && loggedIn}>
           <Stack.Screen name="account" options={{ title: 'Account' }} />
+          <Stack.Screen name="delete-account" options={{ title: 'Delete account' }} />
           <Stack.Screen name="friends/add" options={{ title: 'Add friend' }} />
           <Stack.Screen name="friends/qr" options={{ title: 'My QR code' }} />
           <Stack.Screen name="friends/requests" options={{ title: 'Friend requests' }} />

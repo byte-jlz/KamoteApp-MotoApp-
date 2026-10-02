@@ -282,6 +282,21 @@ const total = (await su(`select count(*) n from public.friendships where status 
 ok('admin_social_stats total', Number(await val(ADM, 'select friendships from public.admin_social_stats()')) === Number(total));
 ok('rider cannot call admin_social_stats', !!(await rider(A, 'select * from public.admin_social_stats()')).error);
 
+// ── Admin: online now ──
+await su(`delete from public.presence`);
+await rider(B, 'select public.heartbeat()');
+await rider(C, 'select public.heartbeat()');
+await rider(D, 'select public.heartbeat()');
+await rider(D, 'select public.set_show_online(false)');
+await rider(F, 'select public.heartbeat()');
+await su(`update public.presence set last_seen = now() - interval '5 minutes' where user_id = '${F}'`);
+const online = (await rider(ADM, 'select * from public.admin_online_riders()')).rows ?? [];
+ok('admin sees riders online in the last 2 minutes', online.map((r) => r.id).sort().join() === [B, C].sort().join(), JSON.stringify(online));
+ok('admin online list has names only', Object.keys(online[0] ?? {}).join() === 'id,full_name,username');
+ok('rider cannot call admin_online_riders', !!(await rider(A, 'select * from public.admin_online_riders()')).error);
+ok('anon cannot call admin_online_riders', !!(await as('anon', null, 'select * from public.admin_online_riders()')).error);
+await rider(D, 'select public.set_show_online(true)');
+
 // ── Deleting an account removes everything ──
 await rider(A, 'select public.block_rider($1)', [G]);
 await rider(A, 'select * from public.create_quick_add_code()');

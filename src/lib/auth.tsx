@@ -72,6 +72,8 @@ function messageFor(code?: string, fallback?: string) {
       return 'An account with this email already exists. Log in instead.';
     case 'username_taken':
       return 'That username is already taken. Try another one.';
+    case 'last_admin':
+      return 'You are the only admin. Make another account an admin before deleting yours.';
     case 'invalid_username':
       return 'Usernames are 3–20 characters: letters, numbers, dot or underscore.';
     case 'email_address_invalid':
@@ -387,6 +389,35 @@ function useAuthValue() {
     [endSession],
   );
 
+  /**
+   * Permanently delete the account and everything stored online (the server checks the password again).
+   * 'keep': this phone's copy of the records (and photos) becomes guest data. 'remove': it is deleted too.
+   */
+  const deleteAccount = useCallback(
+    async (password: string, choice: 'keep' | 'remove'): Promise<AuthResult> => {
+      const userId = savedRef.current?.account?.userId;
+      if (!userId) return fail();
+      // The server ends the session; don't show "You were logged out" while we tidy up.
+      signingOut.current = true;
+      const r = await callFunction('delete-account', { password });
+      if (r.error) {
+        signingOut.current = false;
+        return fail(r.error);
+      }
+      stopSync();
+      await flushStore();
+      try {
+        if (choice === 'keep') await moveAccountToGuest(userId);
+        else await clearAccountData(userId);
+      } catch (e) {
+        console.warn('Failed to move data after deleting account', e);
+      }
+      await endSession('Your account was deleted.');
+      return { ok: true };
+    },
+    [endSession],
+  );
+
   const mode: AuthMode = saved ? saved.mode : 'loading';
   const account = saved?.mode === 'account' ? (saved.account ?? null) : null;
 
@@ -409,8 +440,9 @@ function useAuthValue() {
       updateUsername,
       refreshAccount,
       signOut,
+      deleteAccount,
     }),
-    [mode, account, notice, continueAsGuest, signIn, signUp, verifySignupCode, resendSignupCode, sendResetCode, resetPasswordWithCode, changePassword, recordConsent, updateUsername, refreshAccount, signOut],
+    [mode, account, notice, continueAsGuest, signIn, signUp, verifySignupCode, resendSignupCode, sendResetCode, resetPasswordWithCode, changePassword, recordConsent, updateUsername, refreshAccount, signOut, deleteAccount],
   );
 }
 

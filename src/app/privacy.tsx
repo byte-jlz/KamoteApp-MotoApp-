@@ -73,10 +73,11 @@ export default function Privacy() {
         <P>
           Friends you accept can see your username, full name and online status (for example “Online” or “Active 15m
           ago”). They can’t see your email or your records, and riders who aren’t your friends can’t see your status.
+          The app admin can see which riders are online right now.
         </P>
         <P>
-          To hide it, turn off Active status on the Friends tab. Your friends then see you as offline, you see them as
-          offline too, and we stop recording when you were last active.
+          To hide it, turn off Active status on the Friends tab. Your friends and the app admin then see you as offline,
+          you see your friends as offline too, and we stop recording when you were last active.
         </P>
       </Section>
 

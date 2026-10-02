@@ -76,6 +76,7 @@ export default function AccountScreen() {
 
       <Button title="Change password" variant="secondary" onPress={() => router.push('/change-password')} />
       <LogOutButton />
+      <Button title="Delete account" variant="ghost" onPress={() => router.push('/delete-account')} />
     </Screen>
   );
 }

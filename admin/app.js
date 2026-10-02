@@ -209,17 +209,50 @@ function loginView(message) {
   email.focus();
 }
 
+const ONLINE_REFRESH_MS = 30_000;
+
 async function dashboardView() {
   show(h('p', { class: 'muted' }, 'Loading…'));
-  const [statsRows, riders, socialRows] = await Promise.all([
+  const [statsRows, riders, online] = await Promise.all([
     sb.rpc('admin_stats').then(check),
     sb.rpc('admin_list_riders').then(check),
-    sb.rpc('admin_social_stats').then(check),
+    sb.rpc('admin_online_riders').then(check),
   ]);
   const stats = statsRows[0] ?? {};
-  const social = socialRows[0] ?? {};
 
   const stat = (num, label, alert) => h('div', { class: `stat ${alert ? 'alert' : ''}` }, h('div', { class: 'num' }, fmtNum(num)), h('div', { class: 'label' }, label));
+
+  // Online now: riders whose app checked in during the last 2 minutes (hidden Active status is never listed).
+  const onlineStat = h('a', { class: 'stat stat-link', href: '#online' });
+  const onlineList = h('ul', { class: 'list online-list' });
+  const onlineTitle = h('h2');
+  const onlineCard = h('section', { class: 'card', id: 'online' }, onlineTitle, onlineList);
+  const renderOnline = (list) => {
+    onlineStat.replaceChildren(h('div', { class: 'num' }, fmtNum(list.length)), h('div', { class: 'label' }, 'Online now'));
+    onlineTitle.textContent = `Online now (${list.length})`;
+    onlineList.replaceChildren(
+      ...(list.length
+        ? list.map((r) =>
+            h(
+              'li',
+              null,
+              h('a', { href: `#/rider/${r.id}`, class: 'online-name' }, h('span', { class: 'dot', 'aria-hidden': 'true' }), r.full_name || '(no name)'),
+              r.username ? h('span', { class: 'muted small' }, ` @${r.username}`) : null,
+            ),
+          )
+        : [h('li', { class: 'muted' }, 'Nobody is online right now.')]),
+    );
+  };
+  renderOnline(online);
+  // Refresh the list while the dashboard is open; stops once the page shows something else.
+  const timer = setInterval(async () => {
+    if (!onlineCard.isConnected) return clearInterval(timer);
+    try {
+      renderOnline(await sb.rpc('admin_online_riders').then(check));
+    } catch {
+      /* keep the last list; the next refresh will try again */
+    }
+  }, ONLINE_REFRESH_MS);
 
   const tbody = h('tbody');
   const search = h('input', { type: 'search', class: 'search', placeholder: 'Search name, username or email', 'aria-label': 'Search riders' });
@@ -261,8 +294,9 @@ async function dashboardView() {
       stat(stats.bikes, 'Motorcycles'),
       stat(stats.service_logs_this_month, 'Service logs this month'),
       stat(stats.items_overdue, 'Items overdue', Number(stats.items_overdue) > 0),
-      stat(social.friendships, 'Friendships'),
+      onlineStat,
     ),
+    onlineCard,
     h(
       'section',
       { class: 'card' },

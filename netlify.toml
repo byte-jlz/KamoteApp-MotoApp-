@@ -1,0 +1,9 @@
+# Netlify: deploys the admin website (admin/) automatically when it changes on GitHub.
+# The admin site is plain HTML/CSS/JS, so there is no build step; Netlify publishes the folder as it is.
+# Security headers stay in admin/_headers.
+
+[build]
+  base = "admin"
+  publish = "."
+  command = ""
+# Netlify skips the deploy by itself when a push didn't change anything in admin/ (e.g. app-only commits).

@@ -29,14 +29,24 @@ Plain HTML/CSS/JS, no build step. Works on phone and desktop browsers.
 
 ## Deploy (free)
 
-**Netlify (easiest):** go to https://app.netlify.com/drop and drag the whole `admin` folder onto the page.
-You get a link like `https://something.netlify.app`. Sign up (free) to keep it and to rename it.
+**Netlify, automatic from GitHub (recommended):** `netlify.toml` in the MotoApp folder tells Netlify to publish
+this `admin` folder as it is (no build step). Link the site to the GitHub repo once, and every `git push` that
+changes something in `admin/` updates the site within a minute or two. Pushes that only change the app are skipped.
+
+1. In Netlify, open your site → **Site configuration** → **Build & deploy** → **Continuous deployment** →
+   **Link repository**.
+2. Choose **GitHub**, allow Netlify access (you can limit it to this one repository), and pick the MotoApp repo.
+3. Branch to deploy: **main**. Leave the build settings as Netlify fills them in from `netlify.toml`
+   (base directory `admin`, no build command, publish directory `admin`). Save, and Netlify deploys right away.
+
+The site keeps its address. Deploys and rollbacks are listed under **Deploys**.
+
+**Netlify by hand:** go to https://app.netlify.com/drop and drag the whole `admin` folder onto the page.
 
 **Vercel:** `npx vercel deploy admin --prod` from the MotoApp folder, or import the GitHub repo in Vercel with
 **Root Directory** set to `admin` and **Framework Preset** "Other" (no build command).
 
-Both use the security headers in `_headers` (Netlify) / `vercel.json` (Vercel). To update the site later, deploy
-the folder again.
+Both use the security headers in `_headers` (Netlify) / `vercel.json` (Vercel).
 
 ## Try it locally
 

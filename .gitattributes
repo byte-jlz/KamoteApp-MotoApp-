@@ -1,0 +1,3 @@
+# Keep .gitignore byte-identical to the copy EAS builds from. Expo's fingerprint (runtimeVersion policy) hashes it,
+# and Windows CRLF line endings would make "npm run update" publish for a runtime the installed APKs don't have.
+.gitignore text eol=lf

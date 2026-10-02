@@ -1,9 +1,10 @@
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
-import { ReactNode } from 'react';
+import { ReactElement, ReactNode } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
+  RefreshControlProps,
   ScrollView,
   StyleProp,
   StyleSheet,
@@ -17,7 +18,7 @@ import { fmtDate } from '../lib/format';
 import { Status } from '../lib/status';
 import { colors, themedStyles, themeName } from '../lib/theme';
 
-export function Screen({ children }: { children: ReactNode }) {
+export function Screen({ children, refreshControl }: { children: ReactNode; refreshControl?: ReactElement<RefreshControlProps> }) {
   return (
     <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'android' ? 'padding' : undefined}>
       <ScrollView
@@ -25,6 +26,7 @@ export function Screen({ children }: { children: ReactNode }) {
         contentContainerStyle={styles.screenContent}
         keyboardShouldPersistTaps="handled"
         automaticallyAdjustKeyboardInsets
+        refreshControl={refreshControl}
       >
         {children}
       </ScrollView>

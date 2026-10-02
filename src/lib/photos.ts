@@ -12,7 +12,13 @@ export const BUILTIN_ALBUMS: CustomAlbum[] = [
   { id: 'parts', label: 'Parts', icon: '⚙️' },
   { id: 'bike', label: 'My Bike', icon: '🏍️' },
   { id: 'other', label: 'Other', icon: '📁' },
+  { id: 'qr', label: 'QR / Friends', icon: '🔳' },
 ];
+
+/** Built-in category for friend QR codes. Its photos aren't tied to a motorcycle. */
+export const QR_ALBUM = 'qr';
+/** Photo.bikeId for photos that don't belong to a motorcycle. Older saves never use it, so they load unchanged. */
+export const NO_BIKE = '';
 
 /** Icons offered when creating a category. */
 export const ALBUM_ICONS = ['🌙', '🌅', '⛰️', '🏖️', '🏕️', '🏁', '👥', '🎉', '⛽', '🧳', '🌧️', '🍜', '📸', '🛠️', '🛡️', '⭐'];
@@ -22,7 +28,7 @@ export function allAlbums(custom: CustomAlbum[]) {
 }
 
 export function albumMeta(id: Album, custom: CustomAlbum[]) {
-  return allAlbums(custom).find((a) => a.id === id) ?? BUILTIN_ALBUMS[BUILTIN_ALBUMS.length - 1];
+  return allAlbums(custom).find((a) => a.id === id) ?? BUILTIN_ALBUMS.find((a) => a.id === 'other')!;
 }
 
 export function isBuiltinAlbum(id: Album) {

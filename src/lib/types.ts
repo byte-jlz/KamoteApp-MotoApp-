@@ -51,7 +51,7 @@ export interface Settings {
   theme: 'system' | 'light' | 'dark';
 }
 
-/** A built-in album id ('ride', 'service', 'parts', 'bike', 'other') or a CustomAlbum id. */
+/** A built-in album id ('ride', 'service', 'parts', 'bike', 'other', 'qr') or a CustomAlbum id. */
 export type Album = string;
 
 export interface CustomAlbum {
@@ -62,7 +62,7 @@ export interface CustomAlbum {
 
 export interface Photo {
   id: string;
-  bikeId: string;
+  bikeId: string; // '' (NO_BIKE in photos.ts) = not tied to a motorcycle, e.g. friend QR codes
   kind?: 'photo' | 'video'; // missing = photo (older data)
   fileName: string; // inside the app's documents/photos folder
   thumbFileName?: string; // videos only: a saved frame for the grid
@@ -72,6 +72,8 @@ export interface Photo {
   date: string; // ISO
   width?: number;
   height?: number;
+  /** Friend QR images: the code they hold. `mine` = my own QR, redrawn when I reset my code. */
+  qr?: { code: string; mine?: boolean };
 }
 
 export interface Profile {

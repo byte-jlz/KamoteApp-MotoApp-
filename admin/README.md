@@ -1,7 +1,8 @@
 # MotoMonitor Admin
 
-A small website for admins: dashboard (riders, motorcycles, service logs this month, items overdue), every
-account with its status, each rider's bikes / service logs / clubs, and actions: **Create user**, **Reset temporary
+A small website for admins: dashboard (riders, motorcycles, service logs this month, items overdue, friendships),
+every account with its status, each rider's bikes / service logs / clubs and friend counts (never who their friends
+are), and actions: **Create user**, **Reset temporary
 password**, **Email a reset code**, **Disable / Enable account**.
 
 Plain HTML/CSS/JS, no build step. Works on phone and desktop browsers.

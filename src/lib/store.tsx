@@ -4,7 +4,7 @@ import { useColorScheme } from 'react-native';
 import { defaultItems } from './defaults';
 import { uid } from './format';
 import { rescheduleAll } from './notifications';
-import { deleteMediaFile, makeVideoThumb, saveMediaFile } from './photos';
+import { deleteMediaFile, makeVideoThumb, NO_BIKE, QR_ALBUM, saveMediaFile } from './photos';
 import { Data, EMPTY, parseData } from './localData';
 import { trackSaved } from './sync';
 import { setThemeName, ThemeName } from './theme';
@@ -258,6 +258,42 @@ function useStoreValue(storageKey: string) {
     return added.length;
   }, []);
 
+  /** Saves a friend QR image (a file in the cache) into the QR / Friends category. Not tied to a motorcycle. */
+  const addQrImage = useCallback(
+    (img: { uri: string; width?: number; height?: number; qr: NonNullable<Photo['qr']>; caption?: string }) => {
+      const photo: Photo = {
+        id: uid(),
+        bikeId: NO_BIKE,
+        album: QR_ALBUM,
+        date: new Date().toISOString(),
+        kind: 'photo',
+        fileName: saveMediaFile(img.uri, '.png'),
+        width: img.width,
+        height: img.height,
+        caption: img.caption,
+        qr: img.qr,
+      };
+      setData((d) => ({ ...d, photos: [photo, ...d.photos] }));
+      return photo.id;
+    },
+    [],
+  );
+
+  /** After "Reset my code": redraw every saved copy of my own QR with the new code. Returns how many. */
+  const replaceMyQrImages = useCallback((img: { uri: string; width: number; height: number; code: string }) => {
+    const mine = latest.current.photos.filter((p) => p.qr?.mine && p.qr.code !== img.code);
+    const replaced = new Map(mine.map((p) => [p.id, saveMediaFile(img.uri, '.png')]));
+    mine.forEach((p) => deleteMediaFile(p.fileName));
+    setData((d) => ({
+      ...d,
+      photos: d.photos.map((p) => {
+        const fileName = replaced.get(p.id);
+        return fileName ? { ...p, fileName, width: img.width, height: img.height, qr: { code: img.code, mine: true } } : p;
+      }),
+    }));
+    return mine.length;
+  }, []);
+
   const updatePhoto = useCallback((id: string, patch: Partial<Pick<Photo, 'album' | 'caption' | 'thumbFileName' | 'bikeId'>>) => {
     setData((d) => ({ ...d, photos: d.photos.map((p) => (p.id === id ? { ...p, ...patch } : p)) }));
   }, []);
@@ -359,6 +395,8 @@ function useStoreValue(storageKey: string) {
       logService,
       deleteLog,
       addMedia,
+      addQrImage,
+      replaceMyQrImages,
       updatePhoto,
       deletePhoto,
       saveAlbum,
@@ -371,7 +409,7 @@ function useStoreValue(storageKey: string) {
       applyRemote,
       getData,
     }),
-    [storageKey, applyRemote, getData, ready, themeName, data, addBike, editBike, deleteBike, updateOdometer, saveItem, deleteItem, trackItems, dismissItem, logService, deleteLog, addMedia, updatePhoto, deletePhoto, saveAlbum, deleteAlbum, updateProfile, saveClub, deleteClub, updateSettings],
+    [storageKey, applyRemote, getData, ready, themeName, data, addBike, editBike, deleteBike, updateOdometer, saveItem, deleteItem, trackItems, dismissItem, logService, deleteLog, addMedia, addQrImage, replaceMyQrImages, updatePhoto, deletePhoto, saveAlbum, deleteAlbum, updateProfile, saveClub, deleteClub, updateSettings],
   );
 }
 

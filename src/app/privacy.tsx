@@ -41,6 +41,7 @@ export default function Privacy() {
         <P>• Your email address, username and name</P>
         <P>• Your motorcycles, odometer readings, maintenance items and service history</P>
         <P>• Your clubs and your app settings</P>
+        <P>• Your friends, friend requests and blocked riders, and when you were last active in the app</P>
         <P>• When you signed up and when you last logged in</P>
         <P>
           Your password is never stored in readable form, and nobody (including the app admin) can see it.
@@ -65,6 +66,17 @@ export default function Privacy() {
         <P>
           You, and the app admin, who may look at accounts to help riders and keep the app working. Your data is stored
           with Supabase, a cloud database service; its servers may be outside the Philippines.
+        </P>
+      </Section>
+
+      <Section title="Friends">
+        <P>
+          Friends you accept can see your username, full name and online status (for example “Online” or “Active 15m
+          ago”). They can’t see your email or your records, and riders who aren’t your friends can’t see your status.
+        </P>
+        <P>
+          To hide it, turn off Active status on the Friends tab. Your friends then see you as offline, you see them as
+          offline too, and we stop recording when you were last active.
         </P>
       </Section>
 

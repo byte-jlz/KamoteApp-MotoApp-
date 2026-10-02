@@ -1,0 +1,5 @@
+# Supabase CLI state (project link, versions)
+.temp/
+
+# Copied by tests/sync/copy-lib.mjs before each sync test run
+tests/sync/lib/

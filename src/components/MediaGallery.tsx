@@ -4,7 +4,7 @@ import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Modal, Platform, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { albumMeta, allAlbums, fmtDuration, isBuiltinAlbum, makeVideoThumb, mediaUri } from '../lib/photos';
+import { albumMeta, allAlbums, fmtDuration, isBuiltinAlbum, makeVideoThumb, mediaUri, NO_BIKE, QR_ALBUM } from '../lib/photos';
 import { PickedAsset, useStore } from '../lib/store';
 import { colors, themedStyles } from '../lib/theme';
 import { Album, CustomAlbum, Photo } from '../lib/types';
@@ -78,7 +78,8 @@ export function MediaGallery({ bikeId }: { bikeId?: string }) {
     })();
   }, [scoped, updatePhoto]);
 
-  const list = allAlbums(albums);
+  // QR / Friends photos aren't tied to a motorcycle, so a bike's own gallery doesn't offer that category.
+  const list = allAlbums(albums).filter((a) => !bikeId || a.id !== QR_ALBUM);
   const multiBike = !bikeId && bikes.length > 1;
   const byBike = bikeFilter === 'all' ? scoped : scoped.filter((p) => p.bikeId === bikeFilter);
   const shown =
@@ -97,14 +98,17 @@ export function MediaGallery({ bikeId }: { bikeId?: string }) {
   const summary = multiBike ? `🏍️ ${bikeFilter === 'all' ? 'All bikes' : bikeName(bikeFilter)}  ·  ${catSummary}` : catSummary;
 
   const openAdd = () => {
-    if (!bikes.length) return Alert.alert('No motorcycle yet', 'Add a motorcycle in the Maintenance tab first.');
-    setTargetBike(bikeId ?? (bikeFilter !== 'all' ? bikeFilter : bikes[0].id));
+    if (!bikes.length && catMeta?.id !== QR_ALBUM) {
+      return Alert.alert('No motorcycle yet', 'Add a motorcycle in the Maintenance tab first.');
+    }
+    setTargetBike(bikeId ?? (bikeFilter !== 'all' ? bikeFilter : bikes[0]?.id));
     setTarget(catMeta ? catMeta.id : 'ride');
     setAdding(true);
   };
 
   const pick = async (source: 'photo' | 'video' | 'library') => {
-    if (!targetBike) return;
+    const destBike = target === QR_ALBUM ? NO_BIKE : targetBike;
+    if (destBike === undefined) return Alert.alert('No motorcycle yet', 'Add a motorcycle in the Maintenance tab first.');
     if (Platform.OS === 'web') return Alert.alert('Not available', 'Media is saved on your phone. Use the mobile app.');
     // Close the sheet first; a Modal left open under the system picker misbehaves on iOS.
     setAdding(false);
@@ -126,9 +130,9 @@ export function MediaGallery({ bikeId }: { bikeId?: string }) {
     if (res.canceled || !res.assets.length) return;
     setSaving(true);
     try {
-      const saved = await addMedia(targetBike, target, res.assets as PickedAsset[]);
+      const saved = await addMedia(destBike, target, res.assets as PickedAsset[]);
       if (saved < res.assets.length) Alert.alert('Some items failed', `Saved ${saved} of ${res.assets.length}.`);
-      if (!bikeId) setBikeFilter(targetBike);
+      if (!bikeId) setBikeFilter(destBike === NO_BIKE ? 'all' : destBike);
       setFilter(target);
     } finally {
       setSaving(false);
@@ -226,7 +230,7 @@ export function MediaGallery({ bikeId }: { bikeId?: string }) {
                 ]
                   .filter(Boolean)
                   .join(', ')}
-                onPress={() => router.push(`/bike/${p.bikeId}/photo/${p.id}`)}
+                onPress={() => router.push(p.bikeId === NO_BIKE ? `/photo/${p.id}` : `/bike/${p.bikeId}/photo/${p.id}`)}
                 style={({ pressed }) => pressed && { opacity: 0.7 }}
               >
                 <Tile p={p} size={tile} tag={catMeta ? undefined : albumMeta(p.album, albums).icon} />
@@ -261,7 +265,7 @@ export function MediaGallery({ bikeId }: { bikeId?: string }) {
               <Text style={{ color: colors.muted, fontSize: 18 }}>✕</Text>
             </Pressable>
           </View>
-          {!bikeId && bikes.length > 1 && (
+          {!bikeId && bikes.length > 1 && target !== QR_ALBUM && (
             <>
               <Label>Motorcycle</Label>
               <View style={local.chips}>

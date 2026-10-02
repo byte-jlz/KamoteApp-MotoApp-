@@ -1,11 +1,13 @@
-import { DarkTheme, DefaultTheme, router, Stack, ThemeProvider } from 'expo-router';
+import { DarkTheme, DefaultTheme, router, Stack, ThemeProvider, usePathname } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { NavigationBar } from 'expo-navigation-bar';
 import { useEffect } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { UpdatePrompt } from '../components/UpdatePrompt';
 import { AuthProvider, useAuth } from '../lib/auth';
+import { takePendingCode } from '../lib/friends';
 import { configureNotifications, ensurePermission, onFuelAlertTap, syncFuelAlerts } from '../lib/notifications';
+import { usePresence } from '../lib/presence';
 import { StoreProvider, useStore } from '../lib/store';
 import { useCloudSync } from '../lib/useSync';
 import { colors } from '../lib/theme';
@@ -30,6 +32,21 @@ function RootStack() {
 
   // Logged-in riders sync with the cloud (not while a password change is required: the server refuses anyway).
   useCloudSync(inApp && loggedIn && account ? account.userId : null);
+
+  // Friends: "online" heartbeat while the app is open (logged-in riders only).
+  const friendsUser = inApp && loggedIn && account ? account.userId : null;
+  usePresence(friendsUser);
+
+  // A friend link opened before logging in: open that rider's card now (unless it's already on screen).
+  const pathname = usePathname();
+  useEffect(() => {
+    if (!ready || !friendsUser) return;
+    takePendingCode().then((code) => {
+      if (code && !pathname.startsWith('/add-friend/')) router.push({ pathname: '/add-friend/[code]', params: { code } });
+    });
+    // Only when the rider becomes able to use friends, not on every navigation.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready, friendsUser]);
 
   useEffect(() => {
     if (ready && settings.remindersEnabled) ensurePermission();
@@ -85,6 +102,7 @@ function RootStack() {
           <Stack.Screen name="club-form" options={{ presentation: 'modal' }} />
           <Stack.Screen name="fuel" options={{ title: 'Fuel Prices' }} />
           <Stack.Screen name="bike/[id]/photo/[photoId]" options={{ title: '' }} />
+          <Stack.Screen name="photo/[photoId]" options={{ title: '' }} />
         </Stack.Protected>
         <Stack.Protected guard={mode === 'welcome'}>
           <Stack.Screen name="welcome" options={{ headerShown: false }} />
@@ -100,7 +118,14 @@ function RootStack() {
         </Stack.Protected>
         <Stack.Protected guard={inApp && loggedIn}>
           <Stack.Screen name="account" options={{ title: 'Account' }} />
+          <Stack.Screen name="friends/add" options={{ title: 'Add friend' }} />
+          <Stack.Screen name="friends/qr" options={{ title: 'My QR code' }} />
+          <Stack.Screen name="friends/requests" options={{ title: 'Friend requests' }} />
+          <Stack.Screen name="friends/blocked" options={{ title: 'Blocked riders' }} />
+          <Stack.Screen name="rider/[id]" options={{ title: 'Rider' }} />
         </Stack.Protected>
+        {/* Friend links work logged out too: the screen asks to log in and keeps the code. */}
+        <Stack.Screen name="add-friend/[code]" options={{ title: 'Add friend' }} />
         <Stack.Screen name="privacy" options={{ title: 'Privacy notice' }} />
       </Stack>
       <UpdatePrompt />

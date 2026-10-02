@@ -3,5 +3,5 @@
   "compilerOptions": {
     "strict": true
   },
-  "exclude": ["node_modules", "scraper", "supabase/functions", "admin"]
+  "exclude": ["node_modules", "scraper", "supabase/functions", "supabase/tests", "admin"]
 }

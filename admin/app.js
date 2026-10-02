@@ -211,8 +211,13 @@ function loginView(message) {
 
 async function dashboardView() {
   show(h('p', { class: 'muted' }, 'Loading…'));
-  const [statsRows, riders] = await Promise.all([check(await sb.rpc('admin_stats')), check(await sb.rpc('admin_list_riders'))]);
+  const [statsRows, riders, socialRows] = await Promise.all([
+    sb.rpc('admin_stats').then(check),
+    sb.rpc('admin_list_riders').then(check),
+    sb.rpc('admin_social_stats').then(check),
+  ]);
   const stats = statsRows[0] ?? {};
+  const social = socialRows[0] ?? {};
 
   const stat = (num, label, alert) => h('div', { class: `stat ${alert ? 'alert' : ''}` }, h('div', { class: 'num' }, fmtNum(num)), h('div', { class: 'label' }, label));
 
@@ -256,6 +261,7 @@ async function dashboardView() {
       stat(stats.bikes, 'Motorcycles'),
       stat(stats.service_logs_this_month, 'Service logs this month'),
       stat(stats.items_overdue, 'Items overdue', Number(stats.items_overdue) > 0),
+      stat(social.friendships, 'Friendships'),
     ),
     h(
       'section',
@@ -273,13 +279,16 @@ async function dashboardView() {
 
 async function riderView(id) {
   show(h('p', { class: 'muted' }, 'Loading…'));
-  const [riders, bikes, items, logs, clubs] = await Promise.all([
+  const [riders, bikes, items, logs, clubs, socialRows] = await Promise.all([
     sb.rpc('admin_list_riders').then(check),
     sb.from('bikes').select('*').eq('user_id', id).eq('deleted', false).order('created_at').then(check),
     sb.from('maint_items').select('*').eq('user_id', id).eq('deleted', false).then(check),
     sb.from('service_logs').select('*').eq('user_id', id).eq('deleted', false).order('date', { ascending: false }).limit(100).then(check),
     sb.from('clubs').select('*').eq('user_id', id).eq('deleted', false).order('name').then(check),
+    // Counts only: the admin page never shows who a rider's friends are.
+    sb.rpc('admin_rider_social', { p_id: id }).then(check),
   ]);
+  const social = socialRows[0] ?? {};
   const r = riders.find((x) => x.id === id);
   if (!r) {
     show(h('a', { href: '#/' }, '← Back'), h('p', { class: 'card' }, 'This account no longer exists.'));
@@ -361,6 +370,7 @@ async function riderView(id) {
         h('dt', null, 'Username'), h('dd', null, r.username ? `@${r.username}` : '—'),
         h('dt', null, 'Signed up'), h('dd', null, fmtDateTime(r.signed_up_at)),
         h('dt', null, 'Last login'), h('dd', null, fmtDateTime(r.last_sign_in_at)),
+        h('dt', null, 'Friends'), h('dd', null, `${fmtNum(social.friends)} · Pending: ${fmtNum(social.incoming)} received, ${fmtNum(social.outgoing)} sent`),
         r.must_change_password ? [h('dt', null, 'Temp password'), h('dd', null, `expires ${fmtDateTime(r.temp_password_expires_at)}`)] : null,
       ),
       self

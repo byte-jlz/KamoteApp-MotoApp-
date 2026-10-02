@@ -90,7 +90,7 @@ h2 { font-size: 1.1rem; }
 .stat .num { font-size: 1.9rem; font-weight: 800; }
 .stat .label { color: var(--muted); font-size: 0.875rem; }
 .stat.alert .num { color: var(--danger); }
-@media (min-width: 720px) { .stats { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (min-width: 720px) { .stats { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
 
 /* Buttons and inputs (16px text so phones don't zoom in) */
 .btn {

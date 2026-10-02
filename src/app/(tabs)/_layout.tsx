@@ -2,6 +2,8 @@ import { Link, Tabs } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { FuelDrawer } from '../../components/FuelDrawer';
+import { useAuth } from '../../lib/auth';
+import { useFriends } from '../../lib/friends';
 import { groupByWeek } from '../../lib/fuel';
 import { useThemeName } from '../../lib/store';
 import { colors } from '../../lib/theme';
@@ -58,6 +60,9 @@ function FuelButton({ onPress }: { onPress: () => void }) {
 export default function TabsLayout() {
   useThemeName(); // re-render tab bar/header colors on theme change
   const [fuelOpen, setFuelOpen] = useState(false);
+  const { mode } = useAuth();
+  const { incoming } = useFriends();
+  const badge = mode === 'account' && incoming > 0 ? (incoming > 99 ? '99+' : incoming) : undefined;
   return (
     <>
       <Tabs
@@ -90,6 +95,15 @@ export default function TabsLayout() {
           options={{
             title: 'Gallery',
             tabBarIcon: ({ focused }) => <TabIcon emoji="🖼️" focused={focused} />,
+          }}
+        />
+        <Tabs.Screen
+          name="friends"
+          options={{
+            title: 'Friends',
+            tabBarIcon: ({ focused }) => <TabIcon emoji="👥" focused={focused} />,
+            tabBarBadge: badge,
+            tabBarBadgeStyle: { backgroundColor: colors.danger, color: '#fff', fontSize: 11 },
           }}
         />
         <Tabs.Screen

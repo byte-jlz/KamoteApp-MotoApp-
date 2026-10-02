@@ -1,0 +1,6 @@
+{
+  // Supabase Edge Functions run on Deno, not Node: let the Deno extension check that folder only.
+  // The Expo app (src/) keeps using VS Code's normal TypeScript checking.
+  "deno.enablePaths": ["supabase/functions"],
+  "deno.lint": true
+}

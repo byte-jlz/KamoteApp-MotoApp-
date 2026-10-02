@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import { Alert, Linking, Switch, Text, View } from 'react-native';
 import { Button, Card, Chip, Screen, styles } from '../components/ui';
 import {
@@ -6,6 +7,7 @@ import {
   notificationsUnavailableReason,
   sendTestNotification,
 } from '../lib/notifications';
+import { useAuth } from '../lib/auth';
 import { applyOtaUpdate, checkForUpdates, updateDetails } from '../lib/updates';
 import { fmtDate } from '../lib/format';
 import { useState } from 'react';
@@ -21,6 +23,33 @@ function Row({ title, sub, value, onChange }: { title: string; sub: string; valu
       </View>
       <Switch value={value} onValueChange={onChange} trackColor={{ true: colors.primary }} />
     </View>
+  );
+}
+
+function AccountCard() {
+  const { account } = useAuth();
+  if (account) {
+    return (
+      <Card style={{ gap: 6 }}>
+        <Text style={styles.title}>Account</Text>
+        <Text style={styles.body}>{account.username ? `@${account.username}` : account.email}</Text>
+        {account.username ? <Text style={styles.muted}>{account.email}</Text> : null}
+        <Button title="Manage account" variant="secondary" onPress={() => router.push('/account')} style={{ marginTop: 6 }} />
+      </Card>
+    );
+  }
+  return (
+    <Card style={{ gap: 10 }}>
+      <Text style={styles.title}>Account</Text>
+      <Text style={styles.muted}>
+        You’re using MotoMonitor as a guest, so your records are only on this phone. Create a free account to back them
+        up and use them on another phone.
+      </Text>
+      <View style={[styles.row, { gap: 10 }]}>
+        <Button title="Log in" variant="secondary" onPress={() => router.push('/login')} style={{ flex: 1 }} />
+        <Button title="Create account" onPress={() => router.push('/signup')} style={{ flex: 1 }} />
+      </View>
+    </Card>
   );
 }
 
@@ -65,6 +94,7 @@ ${r.releaseNotes}` : ''}`, [
 
   return (
     <Screen>
+      <AccountCard />
       {!notificationsSupported && (
         <Card style={{ backgroundColor: colors.warnBg, borderColor: colors.warnBg }}>
           <Text style={[styles.body, { color: colors.warn }]}>ℹ️ {notificationsUnavailableReason}</Text>
@@ -114,6 +144,7 @@ ${r.releaseNotes}` : ''}`, [
           {info.updatedAt ? ` · updated ${fmtDate(info.updatedAt)}` : ''}
         </Text>
         <Button title={checking ? 'Checking…' : 'Check for updates'} variant='secondary' onPress={checkUpdates} disabled={checking} style={{ marginTop: 6 }} />
+        <Button title="Privacy notice" variant="ghost" onPress={() => router.push('/privacy')} />
       </Card>
       <Card style={{ gap: 6 }}>
         <Text style={styles.title}>How reminders work</Text>

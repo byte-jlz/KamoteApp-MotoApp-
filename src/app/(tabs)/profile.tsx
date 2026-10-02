@@ -2,7 +2,9 @@ import { ReactNode } from 'react';
 import { router } from 'expo-router';
 import { Pressable, Text, View } from 'react-native';
 import { Avatar, initials } from '../../components/Avatar';
+import { LogOutButton } from '../../components/LogOutButton';
 import { Button, Card, Screen, SectionTitle, StatusPill, styles } from '../../components/ui';
+import { useAuth } from '../../lib/auth';
 import { bikeTypeLabel } from '../../lib/defaults';
 import { fmtKm } from '../../lib/format';
 import { mediaUri } from '../../lib/photos';
@@ -16,6 +18,7 @@ function Divided({ index, children }: { index: number; children: ReactNode }) {
 
 export default function ProfileTab() {
   const { profile, bikes, clubs, photos } = useStore();
+  const { mode, account } = useAuth();
   const name = profile.fullName.trim();
 
   return (
@@ -39,6 +42,23 @@ export default function ProfileTab() {
           <Text style={{ color: colors.primary, fontWeight: '600', marginTop: 4 }}>✏️ Edit profile</Text>
         </Card>
       </Pressable>
+
+      {mode === 'guest' && (
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => router.push('/signup')}
+          style={({ pressed }) => pressed && { opacity: 0.8 }}
+        >
+          <Card style={[styles.row, { gap: 12 }]}>
+            <Text style={{ fontSize: 24 }}>☁️</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.body, { fontWeight: '600' }]}>Back up your records</Text>
+              <Text style={[styles.muted, { fontSize: 13 }]}>Create a free account to keep them safe and use another phone.</Text>
+            </View>
+            <Text style={local.chevron}>›</Text>
+          </Card>
+        </Pressable>
+      )}
 
       <SectionTitle
         right={
@@ -129,6 +149,16 @@ export default function ProfileTab() {
               </Pressable>
             </Divided>
           ))}
+        </Card>
+      )}
+
+      {mode === 'account' && account && (
+        <Card style={{ gap: 10, marginTop: 8 }}>
+          <Text style={styles.muted}>
+            Logged in as{' '}
+            <Text style={{ color: colors.text, fontWeight: '600' }}>{account.username ? `@${account.username}` : account.email}</Text>
+          </Text>
+          <LogOutButton />
         </Card>
       )}
     </Screen>

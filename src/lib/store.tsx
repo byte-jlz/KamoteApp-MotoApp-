@@ -8,8 +8,14 @@ import { deleteMediaFile, makeVideoThumb, saveMediaFile } from './photos';
 import { setThemeName, ThemeName } from './theme';
 import { Album, Bike, BikeType, Club, CustomAlbum, MaintItem, Photo, Profile, ServiceLog, Settings } from './types';
 
-const STORAGE_KEY = 'motopms:data:v1';
+// Guest data has always lived under this key; keep it so existing riders' data loads unchanged.
+const GUEST_KEY = 'motopms:data:v1';
 const MAX_READINGS = 60;
+
+/** Where the app's data lives on the phone: the guest copy, or a logged-in account's copy. */
+export function dataKeyFor(userId?: string | null) {
+  return userId ? `${GUEST_KEY}:user:${userId}` : GUEST_KEY;
+}
 
 interface Data {
   bikes: Bike[];
@@ -65,13 +71,14 @@ function addReading(bike: Bike, km: number, date: string): Bike {
   return { ...bike, readings };
 }
 
-function useStoreValue() {
+function useStoreValue(storageKey: string) {
   const [data, setData] = useState<Data>(EMPTY);
   const [ready, setReady] = useState(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const latest = useRef(data); // what the pending save will write
 
   useEffect(() => {
-    AsyncStorage.getItem(STORAGE_KEY)
+    AsyncStorage.getItem(storageKey)
       .then((raw) => {
         if (raw) {
           const parsed = JSON.parse(raw) as Partial<Data>;
@@ -85,17 +92,29 @@ function useStoreValue() {
       })
       .catch((e) => console.warn('Failed to load data', e))
       .finally(() => setReady(true));
-  }, []);
+  }, [storageKey]);
+
+  // Logging in or out swaps the store; save any change still waiting on the debounce first.
+  useEffect(
+    () => () => {
+      if (!saveTimer.current) return;
+      clearTimeout(saveTimer.current);
+      AsyncStorage.setItem(storageKey, JSON.stringify(latest.current)).catch((e) => console.warn('Failed to save', e));
+    },
+    [storageKey],
+  );
 
   // Persist and refresh reminders after changes (debounced).
   useEffect(() => {
     if (!ready) return;
+    latest.current = data;
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => {
-      AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(data)).catch((e) => console.warn('Failed to save', e));
+      saveTimer.current = null;
+      AsyncStorage.setItem(storageKey, JSON.stringify(data)).catch((e) => console.warn('Failed to save', e));
       rescheduleAll(data.bikes, data.settings);
     }, 500);
-  }, [data, ready]);
+  }, [data, ready, storageKey]);
 
   const updateBikeById = useCallback((id: string, fn: (b: Bike) => Bike) => {
     setData((d) => ({ ...d, bikes: d.bikes.map((b) => (b.id === id ? fn(b) : b)) }));
@@ -354,8 +373,9 @@ function useStoreValue() {
 type Store = ReturnType<typeof useStoreValue>;
 const StoreContext = createContext<Store | null>(null);
 
-export function StoreProvider({ children }: { children: ReactNode }) {
-  const value = useStoreValue();
+/** Remount (pass `key={storageKey}`) when the storage key changes, so no data from the other mode lingers. */
+export function StoreProvider({ storageKey, children }: { storageKey: string; children: ReactNode }) {
+  const value = useStoreValue(storageKey);
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
 }
 
